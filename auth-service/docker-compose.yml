@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    env_file: ./envs/.env
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - GRPC_PORT=${GRPC_PORT}
+      - PORT=${PORT}
+      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:1234/${DB_NAME}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - auth-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: "${DB_PASSWORD}" 
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - auth-network
+
+volumes:
+  postgres-data:
+
+networks:
+  auth-network:
+    driver: bridge
