@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  graph_serv:
+    env_file: ./graph_service/.env
+    build:
+      context: .  # Контекст сборки - корень проекта
+      dockerfile: graph_service/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - GRPC_PORT=${GRPC_PORT}
+      - HTTP_URL=${HTTP_URL}
+      - PORT=${PORT}
+      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres1:5432/${DB_NAME}?sslmode=disable
+    depends_on:
+      postgres1:
+        condition: service_healthy
+    networks:
+      - graph-network
+
+  postgres1:
+    env_file: ./graph_service/.env
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432" # в контейнере 5433
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres1-data:/var/lib/postgresql/data
+      - ./graph_service/init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - graph-network
+
+  auth_serv:
+    env_file: ./auth-service/.env
+    build:
+      context: .  # Контекст сборки - корень проекта
+      dockerfile: auth-service/Dockerfile
+    ports:
+      - "3002:3002"
+      - "50051:50051"  #GRPC-порт
+    environment:
+      - GRPC_PORT=${GRPC_PORT_AUTH}
+      - HTTP_URL=${HTTP_URL_AUTH} 
+      - PORT=${PORT_AUTH}           
+      - DB_URL=postgresql://${DB_USER_AUTH}:${DB_PASSWORD_AUTH}@postgres2:5432/${DB_NAME_AUTH}?sslmode=disable
+    depends_on:
+      postgres2:
+        condition: service_healthy
+    networks:
+      - graph-network
+
+  postgres2:
+    env_file: ./auth-service/.env
+    image: postgres:15-alpine
+    ports:
+      - "5434:5432" # в контейнере 5434
+    environment:
+      POSTGRES_USER: ${DB_USER_AUTH}
+      POSTGRES_PASSWORD: "${DB_PASSWORD_AUTH}"
+      POSTGRES_DB: ${DB_NAME_AUTH} 
+    volumes:
+      - postgres2-data:/var/lib/postgresql/data
+      - ./auth-service/db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_AUTH} -d ${DB_NAME_AUTH}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - graph-network
+
+volumes:
+  postgres1-data: 
+  postgres2-data:
+
+networks:
+  graph-network:
+    driver: bridge
