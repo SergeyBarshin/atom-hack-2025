@@ -10,6 +10,7 @@ type GraphRepository interface {
 	Get(userGuid string, graphNum int) (*models.Graph, error)
 	Update(graph *models.Graph) error
 	Delete(userGuid string, graphNum int) error
+	List(userGuid string) ([]*models.Graph, error)
 }
 
 // для работы с сервисом
@@ -18,4 +19,5 @@ type DataService interface {
 	GetGraph(userGuid string, graphNum int) (*models.Graph, error)
 	UpdateGraph(retort *models.Graph) error
 	DeleteGraph(userGuid string, graphNum int) error
+	ListGraph(userGuid string) ([]*models.Graph, error)
 }

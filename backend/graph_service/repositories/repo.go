@@ -104,3 +104,40 @@ func (r *GraphRepositoryPostgres) Delete(userGuid string, graphNum int) error { 
 
 	return nil
 }
+
+func (r *GraphRepositoryPostgres) List(userGuid string) ([]*models.Graph, error) {
+	query := `
+        SELECT user_guid, graph_num, graph_data
+        FROM graphs
+        WHERE user_guid = $1
+        ORDER BY graph_num  // Для упорядочивания по номеру графа
+    `
+	rows, err := r.db.Query(query, userGuid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query graphs: %w", err)
+	}
+	defer rows.Close()
+
+	var graphs []*models.Graph
+	for rows.Next() {
+		var graph models.Graph
+		var graphDataJSON []byte
+
+		err := rows.Scan(&graph.UserGUID, &graph.GraphNum, &graphDataJSON)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan graph row: %w", err)
+		}
+
+		if err := json.Unmarshal(graphDataJSON, &graph.GraphData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal graph data: %w", err)
+		}
+
+		graphs = append(graphs, &graph)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error after iterating rows: %w", err)
+	}
+
+	return graphs, nil
+}

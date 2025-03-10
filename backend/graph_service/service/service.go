@@ -36,3 +36,7 @@ func (s *DataService) UpdateGraph(graph *models.Graph) error {
 func (s *DataService) DeleteGraph(userGuid string, graphNum int) error {
 	return s.graphRepo.Delete(userGuid, graphNum)
 }
+
+func (s *DataService) ListGraph(userGuid string) ([]*models.Graph, error) {
+	return s.graphRepo.List(userGuid)
+}
