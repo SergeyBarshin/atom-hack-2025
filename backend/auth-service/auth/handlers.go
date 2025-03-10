@@ -33,14 +33,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Хешируем пароль
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Pass), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
 
-	// Вставляем в БД
 	var userUUID string
 	err = db.DB.QueryRow("INSERT INTO users (email, password) VALUES ($1, $2) RETURNING uuid", creds.Email, hashedPassword).
 		Scan(&userUUID)

@@ -27,20 +27,17 @@ func main() {
 	http.ListenAndServe(portServ, nil)
 
 	// Настройка gRPC сервера
-	lis, err := net.Listen("tcp", grpcPort)
+	lis, err := net.Listen("tcp", ":"+grpcPort)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	// Создаем gRPC сервер
 	grpcServer := grpc.NewServer()
 
-	// Регистрируем AuthServer в gRPC
 	authent.RegisterAuthServiceServer(grpcServer, &server.AuthServer{})
 
 	fmt.Println("gRPC Auth Service is running on port", grpcPort)
 
-	// Запускаем сервер
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve gRPC server: %v", err)
 	}
