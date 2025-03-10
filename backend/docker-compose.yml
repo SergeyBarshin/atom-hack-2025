@@ -27,9 +27,9 @@ services:
     ports:
       - "5433:5432" # в контейнере 5433
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1111"
+      POSTGRES_DB: all_data
     volumes:
       - postgres1-data:/var/lib/postgresql/data
       - ./graph_service/init-scripts:/docker-entrypoint-initdb.d

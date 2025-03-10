@@ -17,6 +17,7 @@ import (
 
 func main() {
 	config.LoadConfig()
+	
 	db.InitDB()
 	routes.SetupRoutes()
 
@@ -24,7 +25,7 @@ func main() {
 	grpcPort := config.GrpcPort
 
 	fmt.Println("Server running on port", portServ)
-	http.ListenAndServe(portServ, nil)
+	http.ListenAndServe(":"+portServ, nil)
 
 	// Настройка gRPC сервера
 	lis, err := net.Listen("tcp", ":"+grpcPort)

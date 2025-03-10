@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -35,11 +36,13 @@ func ValidateGraphData(data map[string]interface{}) error {
 // создание графа
 func (h *GraphHandler) CreateGraph(c *gin.Context) {
 
-	userGUID, err := clients.CheckJWT(c)
+	/*userGUID, err := clients.CheckJWT(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
-	}
+	}*/
+
+	userGUID := "360e5555-e30b-20d4-a716-446655440000"
 
 	var graph models.Graph
 	graph.UserGUID = userGUID
@@ -49,20 +52,24 @@ func (h *GraphHandler) CreateGraph(c *gin.Context) {
 		return
 	}
 
+	log.Printf("smt")
+
 	/*if err := clients.UpdateData(&graph); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}*/
 
-	if err := ValidateGraphData(graph.GraphData); err != nil {
+	/*if err := ValidateGraphData(graph.GraphData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	*/
 	if err := h.dataService.CreateGraph(&graph); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	log.Printf("smt4")
 
 	c.JSON(http.StatusCreated, graph)
 }

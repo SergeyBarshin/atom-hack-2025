@@ -19,7 +19,7 @@ WORKDIR /app
 COPY --from=builder /app/auth-service/main .
 COPY --from=builder /app/.env .
 
-# Устанавливаем пакет для работы с .env (если используется godotenv)
+# Устанавливаем пакет для работы с .env
 RUN apk add --no-cache libc6-compat
 
 EXPOSE 3002

@@ -2,7 +2,9 @@ package auth
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"strings"
 
 	"database/sql"
 
@@ -27,27 +29,64 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		Pass  string `json:"pass"`
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&creds)
-	if err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+	log.Printf("smt1")
+
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, `{"error": "Invalid request"}`, http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("smt2")
+
+	creds.Email = strings.ToLower(strings.TrimSpace(creds.Email))
+	if creds.Email == "" || creds.Pass == "" {
+		http.Error(w, `{"error": "Email and password are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("smt3")
+
+	var exists bool
+	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)", creds.Email).Scan(&exists)
+	if err != nil {
+		log.Printf("Check user exists error: %v", err)
+		http.Error(w, `{"error": "Database error"}`, http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		http.Error(w, `{"error": "User already exists"}`, http.StatusConflict)
+		return
+	}
+
+
+	log.Printf("smt4")
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Pass), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		log.Printf("Password hash error: %v", err)
+		http.Error(w, `{"error": "Error hashing password"}`, http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("smt5")
 
 	var userUUID string
-	err = db.DB.QueryRow("INSERT INTO users (email, password) VALUES ($1, $2) RETURNING uuid", creds.Email, hashedPassword).
-		Scan(&userUUID)
+	err = db.DB.QueryRow("INSERT INTO users (email, password) VALUES ($1, $2) RETURNING uuid", creds.Email, hashedPassword).Scan(&userUUID)
 	if err != nil {
-		http.Error(w, "User already exists", http.StatusConflict)
+		log.Printf("Insert user error: %v", err)
+		http.Error(w, `{"error": "Failed to create user"}`, http.StatusInternalServerError)
 		return
 	}
 
-	w.Write([]byte("User registered successfully"))
+	log.Printf("smt6")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "User registered successfully",
+		"uuid":    userUUID,
+	})
+
+	log.Printf("smt7")
 }
 
 // Авторизация
@@ -97,28 +136,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Login successful, token set in cookie"))
 }
-
-// Проверка токена и возврат UUID
-// func GetUUIDHandler(w http.ResponseWriter, r *http.Request) {
-// 	authHeader := r.Header.Get("Authorization")
-// 	if authHeader == "" {
-// 		http.Error(w, "Missing token", http.StatusUnauthorized)
-// 		return
-// 	}
-
-// 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-// 	token, err := ValidateJWT(tokenString)
-// 	if err != nil || !token.Valid {
-// 		http.Error(w, "Invalid token", http.StatusUnauthorized)
-// 		return
-// 	}
-
-// 	claims, _ := token.Claims.(jwt.MapClaims)
-// 	userUUID, _ := claims["uuid"].(string)
-
-// 	w.Write([]byte(userUUID))
-// }
 
 func LogoutUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/SergeyBarshin/atom-hack-2025/backend/graph_service/interfaces"
 	"github.com/SergeyBarshin/atom-hack-2025/backend/graph_service/models"
@@ -21,6 +22,8 @@ func NewGraphRepositoryPostgres(db *sql.DB) interfaces.GraphRepository {
 
 func (r *GraphRepositoryPostgres) Create(graph *models.Graph) error { //работает
 	// Реализация создания графа в Postgres
+
+	log.Printf("smt2")
 	query := `
         INSERT INTO graphs (user_guid, graph_num, graph_data)
         VALUES ($1, $2, $3)
@@ -29,6 +32,8 @@ func (r *GraphRepositoryPostgres) Create(graph *models.Graph) error { //рабо
 	if err != nil {
 		return fmt.Errorf("failed to marshal graph data to JSON: %w", err)
 	}
+
+	log.Printf("smt3")
 
 	_, err = r.db.Exec(query, graph.UserGUID, graph.GraphNum, graphDataJSON)
 	return err
