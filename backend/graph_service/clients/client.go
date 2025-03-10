@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
+	"time"
 
 	pb "github.com/SergeyBarshin/atom-hack-2025/backend/graph_service/grpc"
 	"github.com/SergeyBarshin/atom-hack-2025/backend/graph_service/models"
@@ -41,28 +43,43 @@ func CheckJWT(c *gin.Context) (string, error) {
 }
 
 func UpdateData(graph *models.Graph) error {
-	url := os.Getenv("HTTP_URL")
-
 	if graph == nil {
-		return fmt.Errorf("graph is nil")
-	}
+        return fmt.Errorf("graph is nil")
+    }
 
-	jsonData, err := json.Marshal(graph.GraphData)
-	if err != nil {
-		return err
-	}
-	// PUT запрос на обновление данных
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
+    url := os.Getenv("HTTP_URL")
+    if url == "" {
+        return fmt.Errorf("HTTP_URL environment variable is not set")
+    }
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+    log.Printf("URL: %s", url) // Логируем URL
+
+    jsonData, err := json.Marshal(graph.GraphData)
+    if err != nil {
+        return fmt.Errorf("ошибка маршалинга JSON: %w", err)
+    }
+    log.Printf("Тело запроса: %s", string(jsonData)) // Логируем тело
+
+    req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonData))
+    if err != nil {
+        return fmt.Errorf("ошибка создания запроса: %w", err)
+    }
+    req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+    // Клиент с таймаутом и логированием
+    client := &http.Client{
+        Timeout: 10 * time.Second,
+    }
+
+    log.Printf("Отправка запроса...")
+    resp, err := client.Do(req)
+    if err != nil {
+        log.Printf("Фатальная ошибка при отправке: %v", err) // Детальный лог
+        return fmt.Errorf("ошибка запроса: %w", err)
+    }
+    defer resp.Body.Close()
+
+    log.Printf("Статус ответа: %d", resp.StatusCode) // Лог 
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("server returned: %d %s",
@@ -70,10 +87,14 @@ func UpdateData(graph *models.Graph) error {
 			http.StatusText(resp.StatusCode))
 	}
 
+	log.Printf("5")
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
+
+	log.Printf("6")
 
 	var newGraphData map[string]interface{}
 	if err := json.Unmarshal(body, &newGraphData); err != nil {
@@ -81,5 +102,6 @@ func UpdateData(graph *models.Graph) error {
 	}
 	graph.GraphData = newGraphData
 
+	log.Printf("7")
 	return nil
 }

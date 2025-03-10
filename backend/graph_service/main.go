@@ -36,10 +36,11 @@ func main() {
 
 	router := gin.Default()
 
-	router.POST("/create_graph", graphHandler.CreateGraph)
-	router.GET("/get_graph", graphHandler.GetGraph)
-	router.PUT("/edit_graph", graphHandler.UpdateGraph)
-	router.DELETE("/delete_graphs", graphHandler.DeleteGraph)
+	router.POST("/graph/create_graph", graphHandler.CreateGraph)
+	router.GET("/graph/get_graph", graphHandler.GetGraph)
+	router.PUT("/graph/edit_graph", graphHandler.UpdateGraph)
+	router.DELETE("/graph/delete_graph", graphHandler.DeleteGraph)
+	router.GET("/graph/list_graphs", graphHandler.DeleteGraph)
 
 	router.Run(":" + port)
 }
