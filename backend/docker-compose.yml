@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   graph_serv:
@@ -49,12 +49,12 @@ services:
       - .env
     ports:
       - "3002:3002"
-      - "50051:50051"  #GRPC-порт
+      - "50051:50051" #GRPC-порт
     environment:
       - JWT_SECRET_AUTH=${JWT_SECRET_AUTH}
       - GRPC_PORT_AUTH=${GRPC_PORT_AUTH}
-      - HTTP_URL_AUTH=${HTTP_URL_AUTH} 
-      - PORT_AUTH=${PORT_AUTH}          
+      - HTTP_URL_AUTH=${HTTP_URL_AUTH}
+      - PORT_AUTH=${PORT_AUTH}
       - DB_URL_AUTH=postgresql://${DB_USER_AUTH}:${DB_PASSWORD_AUTH}@postgres2:5432/${DB_NAME_AUTH}?sslmode=disable
     depends_on:
       postgres2:
@@ -71,7 +71,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER_AUTH}
       POSTGRES_PASSWORD: "${DB_PASSWORD_AUTH}"
-      POSTGRES_DB: ${DB_NAME_AUTH} 
+      POSTGRES_DB: ${DB_NAME_AUTH}
     volumes:
       - postgres2-data:/var/lib/postgresql/data
       - ./auth-service/init-scripts:/docker-entrypoint-initdb.d
@@ -83,8 +83,33 @@ services:
     networks:
       - graph-network
 
+  flask_serv:
+    build:
+      context: .
+      dockerfile: analytics-service/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "5010:5000"
+    environment:
+      - FLASK_APP=app.py
+    networks:
+      - graph-network
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf # Указываем путь к nginx.conf
+    depends_on:
+      - graph_serv
+      - auth_serv
+    networks:
+      - graph-network
+
 volumes:
-  postgres1-data: 
+  postgres1-data:
   postgres2-data:
 
 networks:
