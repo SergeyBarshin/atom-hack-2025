@@ -1,18 +1,26 @@
-FROM golang:1.23.4-alpine3.19
+# Фаза сборки
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+# Копируем весь проект
+COPY . .
+RUN go mod tidy
+# Переходим в директорию сервиса
+WORKDIR /app/graph_service 
+RUN CGO_ENABLED=0 GOOS=linux go build -o main ./main.go
 
-COPY graph_service/ ./graph_service
+# Фаза запуска
+FROM alpine:latest AS runner
 
-WORKDIR /app/graph_service
-RUN go build -o main ./main.go
+WORKDIR /app
 
-COPY graph_service/.env ./
+# Копируем бинарник и .env
+COPY --from=builder /app/graph_service/main .
+COPY --from=builder /app/.env .
+
+# Устанавливаем зависимости для работы с .env
+RUN apk add --no-cache libc6-compat
 
 EXPOSE 3001
 CMD ["./main"]
-
-

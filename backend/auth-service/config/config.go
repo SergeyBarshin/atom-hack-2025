@@ -3,25 +3,23 @@ package config
 import (
 	"fmt"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 var (
 	SecretKey string
 	DBURL     string
-	Port      string
+	Portlis   string
 	GrpcPort  string
+	Portserv  string
 )
 
 func LoadConfig() {
-	godotenv.Load()
-	SecretKey = os.Getenv("JWT_SECRET")
-	DBURL := os.Getenv("DB_URL")
-	Port = os.Getenv("PORT")
-	GrpcPort = os.Getenv("GRPC_PORT")
+	SecretKey = os.Getenv("JWT_SECRET_AUTH")
+	DBURL := os.Getenv("DB_URL_AUTH")
+	Portserv = os.Getenv("PORT_AUTH")
+	GrpcPort = os.Getenv("GRPC_PORT_AUTH")
 
-	if SecretKey == "" || DBURL == "" || Port == "" || GrpcPort == "" {
+	if SecretKey == "" || DBURL == "" || Portserv == "" || GrpcPort == "" {
 		panic("Config values missing")
 	}
 	fmt.Println("Config loaded successfully")

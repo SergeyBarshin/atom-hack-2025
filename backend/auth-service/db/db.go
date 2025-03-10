@@ -17,10 +17,5 @@ func InitDB() {
 		log.Fatal("Cannot connect to database:", err)
 	}
 
-	err = DB.Ping()
-	if err != nil {
-		log.Fatal("Database not responding:", err)
-	}
-
 	log.Println("Connected to database")
 }

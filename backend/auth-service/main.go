@@ -20,15 +20,16 @@ func main() {
 	db.InitDB()
 	routes.SetupRoutes()
 
-	port := config.Port
+	portServ := config.Portserv
 	grpcPort := config.GrpcPort
 
-	fmt.Println("Server running on port", port)
-	http.ListenAndServe(port, nil)
+	fmt.Println("Server running on port", portServ)
+	http.ListenAndServe(portServ, nil)
 
-	lis, err := net.Listen("tcp", port)
+	// Настройка gRPC сервера
+	lis, err := net.Listen("tcp", grpcPort)
 	if err != nil {
-		log.Fatalf("Failed to listen on port %s: %v", port, err)
+		log.Fatalf("Failed to listen: %v", err)
 	}
 
 	// Создаем gRPC сервер

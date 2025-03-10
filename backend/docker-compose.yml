@@ -2,10 +2,11 @@ version: '3.8'
 
 services:
   graph_serv:
-    env_file: ./graph_service/.env
     build:
-      context: .  # Контекст сборки - корень проекта
+      context: .
       dockerfile: graph_service/Dockerfile
+    env_file:
+      - .env
     ports:
       - "3001:3001"
     environment:
@@ -20,8 +21,9 @@ services:
       - graph-network
 
   postgres1:
-    env_file: ./graph_service/.env
     image: postgres:15-alpine
+    env_file:
+      - .env
     ports:
       - "5433:5432" # в контейнере 5433
     environment:
@@ -40,18 +42,20 @@ services:
       - graph-network
 
   auth_serv:
-    env_file: ./auth-service/.env
     build:
-      context: .  # Контекст сборки - корень проекта
+      context: .
       dockerfile: auth-service/Dockerfile
+    env_file:
+      - .env
     ports:
       - "3002:3002"
       - "50051:50051"  #GRPC-порт
     environment:
-      - GRPC_PORT=${GRPC_PORT_AUTH}
-      - HTTP_URL=${HTTP_URL_AUTH} 
-      - PORT=${PORT_AUTH}           
-      - DB_URL=postgresql://${DB_USER_AUTH}:${DB_PASSWORD_AUTH}@postgres2:5432/${DB_NAME_AUTH}?sslmode=disable
+      - JWT_SECRET_AUTH=${JWT_SECRET_AUTH}
+      - GRPC_PORT_AUTH=${GRPC_PORT_AUTH}
+      - HTTP_URL_AUTH=${HTTP_URL_AUTH} 
+      - PORT_AUTH=${PORT_AUTH}          
+      - DB_URL_AUTH=postgresql://${DB_USER_AUTH}:${DB_PASSWORD_AUTH}@postgres2:5432/${DB_NAME_AUTH}?sslmode=disable
     depends_on:
       postgres2:
         condition: service_healthy
@@ -59,8 +63,9 @@ services:
       - graph-network
 
   postgres2:
-    env_file: ./auth-service/.env
     image: postgres:15-alpine
+    env_file:
+      - .env
     ports:
       - "5434:5432" # в контейнере 5434
     environment:
@@ -69,7 +74,7 @@ services:
       POSTGRES_DB: ${DB_NAME_AUTH} 
     volumes:
       - postgres2-data:/var/lib/postgresql/data
-      - ./auth-service/db:/docker-entrypoint-initdb.d
+      - ./auth-service/init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER_AUTH} -d ${DB_NAME_AUTH}"]
       interval: 10s
