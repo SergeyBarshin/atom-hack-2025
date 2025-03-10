@@ -1,0 +1,35 @@
+package server
+
+import (
+	"context"
+	"errors"
+
+	"github.com/SergeyBarshin/atom-hack-2025/backend/auth-service/auth"
+	serv "github.com/SergeyBarshin/atom-hack-2025/backend/graph_service/grpc"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// AuthServer реализует gRPC сервис AuthService
+type AuthServer struct {
+	serv.UnimplementedAuthServiceServer
+}
+
+// GetUUID обрабатывает gRPC-запрос с токеном и возвращает UUID
+func (s *AuthServer) GetUUID(ctx context.Context, req *serv.TokenRequest) (*serv.UUIDResponse, error) {
+	token, err := auth.ValidateJWT(req.Token)
+	if err != nil {
+		return nil, errors.New("invalid token")
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token claims")
+	}
+
+	userUUID, ok := claims["uuid"].(string)
+	if !ok {
+		return nil, errors.New("uuid not found in token")
+	}
+
+	return &serv.UUIDResponse{Uuid: userUUID}, nil
+}

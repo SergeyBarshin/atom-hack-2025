@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "graph_service/grpc"; 
+
+
+service AuthService {
+  rpc GetUUID (TokenRequest) returns (UUIDResponse);
+}
+
+message TokenRequest {
+  string token = 1;
+}
+
+message UUIDResponse {
+  string uuid = 1;
+}
